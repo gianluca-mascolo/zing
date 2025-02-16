@@ -9,8 +9,27 @@ pub fn main() anyerror!void {
     //std.posix.sa_family
     const src_addr = try std.net.Address.parseIp4("127.0.0.1", 0);
     const dst_addr = try std.net.Address.parseIp4("127.0.0.1", 0);
-    const ping = try std.posix.sendto(sock, "ping", 0, &dst_addr.any, dst_addr.getOsSockLen());
-
+    //https://datatracker.ietf.org/doc/html/rfc792
+    //\x08 type 8 echo //\x00 code. always 0 msg0
+    //\x00 \x00 checksum 16 bit              msg1
+    //\x00 \x00 identifier. may be 0 16 bit  msg2
+    //\x00 \x00 sequence may be 0 16 bit     msg3
+    //ZI        data
+    //\x5a \x49   Z I
+    const msg0: u16 = 8 * 256;
+    const msg1: u16 = 0;
+    const msg2: u16 = 0;
+    const msg3: u16 = 0;
+    const msg4: u16 = 90 * 256 + 73;
+    const sum = msg0 + msg1 + msg2 + msg3 + msg4;
+    const csum = ~sum;
+    const csum_lo = csum & 0xff;
+    const csum_hi = (csum & 0xff00) >> 8;
+    std.debug.print("msg {} {} {} {} {} = {}, csum {} low {} high {}\n", .{ msg0, msg1, msg2, msg3, msg4, sum, csum, csum_lo, csum_hi });
+    const message = [_]u8{ 8, 0, csum_hi, csum_lo, 0, 0, 0, 0, 90, 73 };
+    //https://stackoverflow.com/questions/20247551/icmp-echo-checksum
+    const ping = try std.posix.sendto(sock, &message, 0, &dst_addr.any, dst_addr.getOsSockLen());
+    // std.posix.sendto(sockfd: socket_t, buf: []const u8, flags: u32, dest_addr: ?*const sockaddr, addrlen: socklen_t)
     //std.posix.setsockopt(fd: socket_t, level: i32, optname: u32, opt: []const u8)
     //std.posix.SO.RCVBUF
     std.debug.print("socket: {any}\n", .{sock});
