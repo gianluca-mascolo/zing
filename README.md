@@ -38,3 +38,18 @@ E.....@.@...................ZI
 23:04:34.882345 IP 127.0.0.1 > 127.0.0.1: ICMP echo reply, id 0, seq 0, length 10
 E.......@...................ZI
 ```
+
+# Receivng a message
+
+`sudo ./zing `
+I need to decode the header with  https://book.huihoo.com/iptables-tutorial/x1078.htm
+
+```
+seq 5 msg { 65, 65 } data 16705 ret: { 8, 0, 182, 180, 0, 3, 0, 7, 65, 65 }
+socket: 3
+dst: 127.0.0.1:0
+ping 10
+pong 30
+pong { 69, 0, 0, 30, 7, 197, 64, 0, 64, 1, 53, 24, 127, 0, 0, 1, 127, 0, 0, 1, 8, 0, 182, 180, 0, 3, 0, 7, 65, 65, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+OK
+```

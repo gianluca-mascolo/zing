@@ -23,6 +23,8 @@ fn icmp_checksum(seq: u16, msg: *const [2]u8) [10]u8 {
     } else {
         return_val = @bitCast(pkt_vector);
     }
+    return_val[0] = 8;
+    return_val[1] = 0;
     std.debug.print("seq {} msg {any} data {} ret: {any}\n", .{ seq, msg, data, return_val });
     return return_val;
 }
@@ -31,11 +33,18 @@ pub fn main() anyerror!void {
     const sock = try std.posix.socket(std.posix.AF.INET, std.posix.SOCK.RAW, std.posix.IPPROTO.ICMP);
     defer std.posix.close(sock);
     try std.posix.setsockopt(sock, std.posix.SOL.SOCKET, std.posix.SO.DONTROUTE, &std.mem.toBytes(@as(c_int, 1)));
+    var src_addr = try std.net.Address.parseIp4("127.0.0.1", 0);
+    var src_len = src_addr.getOsSockLen();
     const dst_addr = try std.net.Address.parseIp4("127.0.0.1", 0);
-    const echo_request = icmp_checksum(5, "AB");
+    const echo_request = icmp_checksum(5, "AA");
+    var echo_reply = [_]u8{0} ** 60;
     const ping = try std.posix.sendto(sock, &echo_request, 0, &dst_addr.any, dst_addr.getOsSockLen());
+    const pong = try std.posix.recvfrom(sock, &echo_reply, 0, &src_addr.any, &src_len);
     std.debug.print("socket: {any}\n", .{sock});
     std.debug.print("dst: {any}\n", .{dst_addr});
     std.debug.print("ping {any}\n", .{ping});
+    std.debug.print("pong {any}\n", .{pong});
+    //https://book.huihoo.com/iptables-tutorial/x1078.htm
+    std.debug.print("pong {any}\n", .{echo_reply});
     try stdout.print("OK\n", .{});
 }
